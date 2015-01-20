@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GridView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/a_ch_gridview"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:horizontalSpacing="4dp"
+    android:numColumns="5"
+    android:paddingTop="10dp"
+    android:verticalSpacing="2dp"
+     android:scrollbarDefaultDelayBeforeFade="3000" >
+
+</GridView>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <TextView
+        android:id="@+id/a_plan_tv_selpkg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:gravity="right"
+        android:padding="7sp"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <View
+        android:id="@+id/f_my_profile_hr_line1"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_below="@+id/a_plan_tv_selpkg"
+        android:background="@color/orange" />
+
+    <LinearLayout
+        android:id="@+id/a_plan_linlayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="3dp" >
+
+        <Button
+            android:id="@+id/a_plan_btn_submit"
+            android:layout_width="110dp"
+            android:layout_height="44dp"
+            android:layout_margin="5dp"
+            android:background="@drawable/selector_vod_mov_dtls_btn_hd"
+            android:minWidth="100dp"
+            android:onClick="btnSubmit_onClick"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ExpandableListView
+        android:id="@+id/f_my_pkg_exlv_my_plans"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/a_plan_linlayout"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/f_my_profile_hr_line1"
+        android:divider="@color/orange"
+        android:dividerHeight="2dp"
+        android:scrollbars="vertical"
+        />
+      <ListView
+        android:id="@+id/f_my_pkg_payterm_lv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/a_plan_linlayout"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/a_plan_tv_selpkg"
+        android:divider="@color/orange"
+        android:dividerHeight="2dp"
+        android:scrollbars="vertical"
+        android:visibility="gone" />
+
+</RelativeLayout>

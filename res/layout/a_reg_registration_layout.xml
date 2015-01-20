@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_horizontal"
+    android:background="@drawable/img_bg_reg_forum"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/a_reg_tv_user_reg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="10dp"
+        android:layout_marginTop="10dp"
+        android:text="@string/user_reg"
+        android:textColor="#5A5A5A"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+      <EditText
+        android:id="@+id/a_reg_et_full_name"
+        android:layout_width="260dp"
+        android:layout_height="30dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="13dp"
+        android:background="@drawable/img_et_reg"
+        android:ems="10"
+        android:hint="@string/reg_full_name"
+        android:inputType="text"
+        android:paddingLeft="10dp"
+        android:textSize="18sp" />
+
+     <Spinner
+        android:id="@+id/a_reg_sp_city"
+        android:layout_width="260dp"
+        android:layout_height="30dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="13dp"
+        android:spinnerMode="dropdown"
+        android:textSize="18sp" />
+     
+     <EditText
+        android:id="@+id/a_reg_et_mobile_no"
+        android:layout_width="260dp"
+        android:layout_height="30dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="13dp"
+        android:background="@drawable/img_et_reg"
+        android:hint="@string/mobile_no"
+        android:inputType="phone"
+        android:maxLength="16"
+        android:paddingLeft="10dp"
+        android:textSize="18sp" >
+
+        <requestFocus />
+    </EditText>
+
+  
+    <EditText
+        android:id="@+id/a_reg_et_email_id"
+        android:layout_width="260dp"
+        android:layout_height="30dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="13dp"
+        android:background="@drawable/img_et_reg"
+        android:ems="10"
+        android:hint="@string/email_id"
+        android:inputType="text"
+        android:paddingLeft="10dp"
+        android:textSize="18sp" />
+
+    <EditText
+        android:id="@+id/a_reg_et_pwd"
+        android:layout_width="260dp"
+        android:layout_height="30dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="13dp"
+        android:background="@drawable/img_et_reg"
+        android:ems="10"
+        android:hint="@string/password"
+        android:inputType="textPassword"
+        android:paddingLeft="10dp"
+        android:textSize="18sp" />
+
+    <LinearLayout
+        android:layout_width="260dp"
+        android:layout_height="30dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="13dp"
+        android:layout_marginTop="10dp" >
+
+        <Button
+            android:id="@+id/a_reg_btn_cancel"
+            android:layout_width="60dp"
+            android:layout_height="30dp"
+            android:layout_marginLeft="3dp"
+            android:layout_marginRight="3dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_btn_cancel"
+            android:onClick="btnCancel_onClick" />
+
+        <Button
+            android:id="@+id/a_reg_btn_submit"
+            android:layout_width="60dp"
+            android:layout_height="30dp"
+            android:layout_marginLeft="3dp"
+            android:layout_marginRight="3dp"
+            android:layout_weight="1"
+            android:background="@drawable/selector_btn_submit"
+            android:onClick="btnRegister_onClick" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/a_reg_tv_login"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="3dp"
+        android:layout_marginTop="3dp"
+        android:clickable="true"
+        android:gravity="center_horizontal"
+        android:onClick="textLogin_onClick"
+        android:text="@string/reg_existing_user"
+        android:textColor="#0AA4E6"
+        android:textSize="17sp" />
+
+    <TextView
+        android:id="@+id/a_reg_tv_note"
+        android:layout_width="wrap_content"
+        android:layout_height="58dp"
+        android:layout_marginBottom="6dp"
+        android:layout_marginLeft="3dp"
+        android:layout_marginRight="3dp"
+        android:layout_marginTop="3dp"
+        android:gravity="center_horizontal"
+        android:text="@string/reg_note"
+        android:textColor="#5A5A5A"
+        android:textSize="12sp" />
+
+</LinearLayout>

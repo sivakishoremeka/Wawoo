@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <integer name="ch_img_size">128</integer>
+    <integer name="login_layout_height">155</integer>
+    <integer name="login_layout_width">160</integer>
+    <integer name="Register_layout_height">210</integer>
+    <integer name="Register_layout_width">160</integer>
+
+</resources>

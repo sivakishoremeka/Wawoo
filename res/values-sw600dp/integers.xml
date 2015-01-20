@@ -1,0 +1,9 @@
+<resources>
+
+    <integer name="ch_img_size">160</integer>
+    <integer name="login_layout_width">240</integer>
+    <integer name="login_layout_height">260</integer>
+    <integer name="Register_layout_width">240</integer>
+    <integer name="Register_layout_height">330</integer>
+
+</resources>

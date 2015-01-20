@@ -1,0 +1,13 @@
+<resources>
+
+    <!--
+         Customize dimensions originally defined in res/values/dimens.xml (such as
+         screen margins) for sw600dp devices (e.g. 7" tablets) here.
+    -->
+   <integer name="ch_img_size">128</integer>
+    <integer name="login_layout_height">230</integer>
+    <integer name="login_layout_width">240</integer>
+    <integer name="Register_layout_height">280</integer>
+    <integer name="Register_layout_width">230</integer>
+
+</resources>

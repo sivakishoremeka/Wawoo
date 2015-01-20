@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="orange">#FF7C00</color>
+    <color name="white">#FFFFFF</color>
+    <color name="pink">#DF2D3A</color>
+    <color name="dark_pink">#C12431</color>
+    <color name="dark_blue">#042D5F</color>
+    <color name="selected_blue">#436DA6</color>
+    <color name="f_lv_child_color_def">#A1C5F0</color>
+</resources>
