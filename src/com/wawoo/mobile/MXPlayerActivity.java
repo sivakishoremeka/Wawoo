@@ -31,6 +31,7 @@ public class MXPlayerActivity extends Activity {
 	public static final String EXTRA_POSITION = "position";
 	public static final String EXTRA_RETURN_RESULT = "return_result";
 	public static final String EXTRA_HEADERS = "headers";
+	public static int INSTALL_MXPLAYER_MARKET = 9999;
 
 	// MX-Player
 

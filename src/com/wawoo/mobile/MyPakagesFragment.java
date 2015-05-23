@@ -502,6 +502,7 @@ public class MyPakagesFragment extends Fragment {
 				Toast.makeText(getActivity(), "Select a Plan to Change",
 						Toast.LENGTH_LONG).show();
 			} else {
+				((Button) v).setEnabled(false);
 				orderId = Integer
 						.parseInt(mMyPlans.get(selGroupId).orderId);
 				selGroupId = -1;
@@ -533,6 +534,7 @@ public class MyPakagesFragment extends Fragment {
 									return false;
 								}
 							});
+					((Button) v).setEnabled(true);
 				} else {
 					mExpListView.setAdapter(listAdapter);
 					Toast.makeText(getActivity(), "No new Plans",
@@ -541,8 +543,8 @@ public class MyPakagesFragment extends Fragment {
 			}
 		}else if (((Button) v).getText().toString()
 				.equalsIgnoreCase(getString(R.string.next2))) {
-			((Button) v).setText(R.string.subscribe);
 			if(selGroupId!=-1){
+				((Button) v).setEnabled(false);
 				getPaytermsforSelPlan();
 			}
 			else{
@@ -551,7 +553,8 @@ public class MyPakagesFragment extends Fragment {
 		} 
 		else if (((Button) v).getText().toString()
 				.equalsIgnoreCase(getString(R.string.subscribe))) {
-			if (selGroupId >= 0) {
+			if (selGroupId !=-1) {
+				((Button) v).setEnabled(false);
 				changePlan(mNewPlans.get(selGroupId).toString());
 			} else {
 				Toast.makeText(getActivity().getApplicationContext(),
@@ -611,12 +614,19 @@ public class MyPakagesFragment extends Fragment {
 				} else {
 					Toast.makeText(
 							getActivity(),
-							"Server Error : "
-									+ retrofitError.getResponse().getStatus(),
-							Toast.LENGTH_LONG).show();
+							"No Payterms for this plan.", Toast.LENGTH_LONG)
+							.show();
+					//Toast.makeText(
+					//		getActivity(),
+					//		"Server Error : "
+					//				+ retrofitError.getResponse().getStatus(),
+					//		Toast.LENGTH_LONG).show();
 				}
 			} else
 				mIsReqCanceled = false;
+			Button b = (Button) mRootView.findViewById(R.id.a_plan_btn_submit);
+			b.setEnabled(true);
+			selGroupId = -1;
 		}
 
 		@Override
@@ -644,9 +654,6 @@ public class MyPakagesFragment extends Fragment {
 		TextView tv_title = (TextView) mRootView.findViewById(R.id.a_plan_tv_selpkg);
 		tv_title.setText(R.string.choose_payterm);
 		
-		Button btnNext = (Button) mRootView.findViewById(R.id.a_plan_btn_submit);
-		btnNext.setText(R.string.subscribe);
-		
 		mPaytermLv = (ListView) mRootView.findViewById(R.id.f_my_pkg_payterm_lv);
 		mListAdapter = null;
 		if (mPayterms != null && mPayterms.size() > 0) {
@@ -667,6 +674,9 @@ public class MyPakagesFragment extends Fragment {
 					}
 				}
 			});
+			Button b = (Button) mRootView.findViewById(R.id.a_plan_btn_submit);
+			b.setText(R.string.subscribe);
+			b.setEnabled(true);
 		} else {
 			mPaytermLv.setAdapter(null);
 			Toast.makeText(getActivity(), "No Payterms for this Plan",
@@ -764,6 +774,9 @@ public class MyPakagesFragment extends Fragment {
 				Toast.makeText(getActivity(), resObj.getsErrorMessage(),
 						Toast.LENGTH_LONG).show();
 			}
+			
+			Button b = (Button) mRootView.findViewById(R.id.a_plan_btn_submit);
+			b.setEnabled(true);
 		}
 	}
 	public void onBackPressed() {

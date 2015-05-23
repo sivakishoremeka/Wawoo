@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.wawoo.mobile"
-    android:versionCode="31"
-    android:versionName="1.3.13" >
+    android:versionCode="34"
+    android:versionName="1.3.13.3" >
 
     <uses-sdk
         android:minSdkVersion="11"
@@ -168,6 +168,42 @@
             android:configChanges="keyboardHidden|orientation" />
         <activity android:name="io.card.payment.DataEntryActivity" />
         <!-- paypal -->
+        
+        
+        <!--  Interswitch --><activity
+            android:name="com.interswitchng.techquest.vervepayment.VervePayment"
+            android:label="" >
+        </activity>
+        <activity
+            android:name="com.interswitchng.techquest.vervepayment.LoginActivity"
+            android:label=""
+          >
+        </activity>
+        <activity
+            android:name="com.interswitchng.techquest.vervepayment.VerifyPhoneActivity"
+            android:label="" >
+        </activity>
+        <activity
+            android:name="com.interswitchng.techquest.vervepayment.VerifyTokenActivity"
+            android:label="" >
+        </activity>
+        <activity
+            android:name="com.interswitchng.techquest.vervepayment.AddCardActivity"
+            android:label="" >
+        </activity>
+        <activity
+            android:name="com.interswitchng.techquest.vervepayment.ListCardsActivity"
+            android:label="" >
+        </activity>
+        <activity
+            android:name="com.interswitchng.techquest.vervepayment.base.BaseActivity"
+            android:label="" >
+        </activity>
+        <activity
+            android:name="com.interswitchng.techquest.vervepayment.PayWithExistingCardActivity"
+            android:label="" >
+        </activity>
+        <!-- Interswitch -->
     </application>
 
 </manifest>

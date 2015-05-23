@@ -1,10 +1,14 @@
 package com.wawoo.mobile;
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import retrofit.Callback;
 import retrofit.RestAdapter;
@@ -20,6 +24,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.AdapterView;
@@ -32,6 +37,10 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.paypal.android.sdk.payments.PayPalPayment;
+import com.paypal.android.sdk.payments.PayPalService;
+import com.paypal.android.sdk.payments.PaymentActivity;
+import com.paypal.android.sdk.payments.PaymentConfirmation;
 import com.wawoo.adapter.CustomExpandableListAdapter;
 import com.wawoo.adapter.PaytermAdapter;
 import com.wawoo.data.Paytermdatum;
@@ -54,11 +63,7 @@ public class PlanActivity extends Activity {
 	MyApplication mApplication = null;
 	OBSClient mOBSClient;
 	boolean mIsReqCanceled = false;
-
-	//Activity mActivity;
 	SharedPreferences mPrefs;
-	//static String CLIENT_DATA;
-	//String mClinetData;
 	List<PlanDatum> mPlans;
 	List<Paytermdatum> mPayterms;
 	CustomExpandableListAdapter mExListAdapter;
@@ -67,6 +72,7 @@ public class PlanActivity extends Activity {
 	ListView mPaytermLv;
 	public static int selGroupId = -1;
 	public static int selPaytermId = -1;
+	AlertDialog mConfirmDialog ;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -154,7 +160,6 @@ public class PlanActivity extends Activity {
 			@Override
 			public boolean onGroupClick(ExpandableListView parent, View v,
 					int groupPosition, long id) {
-
 				RadioButton rb1 = (RadioButton) v
 						.findViewById(R.id.plan_list_plan_rb);
 				if (null != rb1 && (!rb1.isChecked())) {
@@ -183,7 +188,82 @@ public class PlanActivity extends Activity {
 				.equalsIgnoreCase(getString(R.string.subscribe))) {
 			
 			if(selGroupId !=-1 && selPaytermId != -1){
-				orderPlans(mPlans.get(selGroupId).toString());
+				//Redirect to Paypal
+				if (mApplication.balanceCheck == true
+						&& (mApplication.getBalance() > 0)) {
+				//if(true){  //k
+				//	mApplication.setPayPalCheck(true);//k
+					
+					final boolean isPayPalChk = mApplication
+							.isPayPalCheck();
+					AlertDialog.Builder builder = new AlertDialog.Builder(
+							(PlanActivity.this),
+							AlertDialog.THEME_HOLO_LIGHT);
+					builder.setIcon(R.drawable.ic_logo_confirm_dialog);
+					builder.setTitle("Confirmation");
+					String msg = "Insufficient Balance."
+							+ (isPayPalChk == true ? "Go to PayPal ??"
+									: "Please do Payment.");
+					builder.setMessage(msg);
+					builder.setCancelable(true);
+					mConfirmDialog = builder.create();
+					mConfirmDialog.setButton(AlertDialog.BUTTON_NEGATIVE,
+							(isPayPalChk == true ? "No" : ""),
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog,
+										int buttonId) {
+								}
+							});
+					mConfirmDialog.setButton(AlertDialog.BUTTON_POSITIVE,
+							(isPayPalChk == true ? "Yes" : "Ok"),
+							new DialogInterface.OnClickListener() {
+								@Override
+								public void onClick(DialogInterface dialog,
+										int which) {
+									if (isPayPalChk == true) {
+										Intent svcIntent = new Intent(
+												PlanActivity.this,
+												PayPalService.class);
+
+										svcIntent
+												.putExtra(
+														PayPalService.EXTRA_PAYPAL_CONFIGURATION,
+														mApplication
+																.getPaypalConfig());
+
+										startService(svcIntent);
+
+										PayPalPayment paymentData = new PayPalPayment(
+												new BigDecimal(mApplication
+														.getBalance()),
+												mApplication.getCurrency(),
+												getResources().getString(
+														R.string.app_name)
+														+ " -Payment",
+												PayPalPayment.PAYMENT_INTENT_SALE);
+
+										Intent actviIntent = new Intent(
+												PlanActivity.this,
+												PaymentActivity.class);
+
+										actviIntent
+												.putExtra(
+														PaymentActivity.EXTRA_PAYMENT,
+														paymentData);
+
+										startActivityForResult(
+												actviIntent,
+												MyApplication.REQUEST_CODE_PAYMENT);	
+
+										}
+								}
+							});
+					mConfirmDialog.show();
+				} else {
+					//Book paln in OBS
+					orderPlans(mPlans.get(selGroupId).toString());
+				}
+				
 			}
 			else{
 				Toast.makeText(this, "Choose a Payterm to Subscribe", Toast.LENGTH_LONG).show();
@@ -201,10 +281,6 @@ public class PlanActivity extends Activity {
 								MyApplication.basicAuth,
 								MyApplication.contentType)).build();
 		 OBSClient client = restAdapter.create(OBSClient.class);
-		//CLIENT_DATA = mApplication.getResources().getString(
-		//		R.string.client_data);
-		//mPrefs = mActivity.getSharedPreferences(mApplication.PREFS_FILE, 0);
-		//mClinetData = mPrefs.getString(CLIENT_DATA, "");		 
 		 if (mProgressDialog != null) {
 				mProgressDialog.dismiss();
 				mProgressDialog = null;
@@ -268,6 +344,153 @@ public class PlanActivity extends Activity {
 	};
 
 
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		/** Stop PayPalIntent Service... */
+		stopService(new Intent(this, PayPalService.class));
+		if (mConfirmDialog != null && mConfirmDialog.isShowing()) {
+			mConfirmDialog.dismiss();
+		}
+		if (resultCode == Activity.RESULT_OK) {
+			PaymentConfirmation confirm = data
+					.getParcelableExtra(PaymentActivity.EXTRA_RESULT_CONFIRMATION);
+			if (confirm != null) {
+				try {
+					Log.i("OBSPayment", confirm.toJSONObject().toString(4));
+					/** Call OBS API for verification and payment record. */
+					OBSPaymentAsyncTask task = new OBSPaymentAsyncTask();
+					task.execute(confirm.toJSONObject().toString(4));
+				} catch (JSONException e) {
+					Log.e("OBSPayment",
+							"an extremely unlikely failure occurred: ", e);
+				}
+			}
+		} else if (resultCode == Activity.RESULT_CANCELED) {
+			Log.i("OBSPayment", "The user canceled.");
+			Toast.makeText(this, "The user canceled.", Toast.LENGTH_LONG)
+					.show();
+		} else if (resultCode == PaymentActivity.RESULT_EXTRAS_INVALID) {
+			Log.i("OBSPayment",
+					"An invalid Payment or PayPalConfiguration was submitted. Please see the docs.");
+			Toast.makeText(this,
+					"An invalid Payment or PayPalConfiguration was submitted",
+					Toast.LENGTH_LONG).show();
+		}
+	}
+
+	
+	private class OBSPaymentAsyncTask extends
+	AsyncTask<String, Void, ResponseObj> {
+JSONObject reqJson = null;
+
+@Override
+protected void onPreExecute() {
+	super.onPreExecute();
+	if (mProgressDialog != null) {
+		mProgressDialog.dismiss();
+		mProgressDialog = null;
+	}
+	mProgressDialog = new ProgressDialog(PlanActivity.this,
+			ProgressDialog.THEME_HOLO_DARK);
+	mProgressDialog.setMessage("Connecting Server...");
+	mProgressDialog.setCanceledOnTouchOutside(false);
+	mProgressDialog.setOnCancelListener(new OnCancelListener() {
+
+		public void onCancel(DialogInterface arg0) {
+			if (mProgressDialog.isShowing())
+				mProgressDialog.dismiss();
+
+			Toast.makeText(PlanActivity.this,
+					"Payment verification Failed.", Toast.LENGTH_LONG)
+					.show();
+			cancel(true);
+		}
+	});
+	mProgressDialog.show();
+}
+
+@Override
+protected ResponseObj doInBackground(String... arg) {
+	ResponseObj resObj = new ResponseObj();
+	try {
+		reqJson = new JSONObject(arg[0]);
+
+		if (mApplication.isNetworkAvailable()) {
+			resObj = Utilities.callExternalApiPostMethod(
+					getApplicationContext(),
+					"/payments/paypalEnquirey/"
+							+ mApplication.getClientId(), reqJson);
+		} else {
+			resObj.setFailResponse(100, "Network error.");
+		}
+	} catch (JSONException e) {
+		Log.e("ChannelsActivity-ObsPaymentCheck",
+				(e.getMessage() == null) ? "Json Exception" : e
+						.getMessage());
+		e.printStackTrace();
+		Toast.makeText(PlanActivity.this,
+				"Invalid data: On PayPal Payment ", Toast.LENGTH_LONG)
+				.show();
+	}
+	if (mConfirmDialog != null && mConfirmDialog.isShowing()) {
+		mConfirmDialog.dismiss();
+	}
+	return resObj;
+}
+
+@Override
+protected void onPostExecute(ResponseObj resObj) {
+
+	super.onPostExecute(resObj);
+	if (mProgressDialog.isShowing()) {
+		mProgressDialog.dismiss();
+	}
+
+	if (resObj.getStatusCode() == 200) {
+		if (resObj.getsResponse().length() > 0) {
+			JSONObject json;
+			try {
+				json = new JSONObject(resObj.getsResponse());
+				json = json.getJSONObject("changes");
+				if (json != null) {
+					String mPaymentStatus = json
+							.getString("paymentStatus");
+					if (mPaymentStatus.equalsIgnoreCase("Success")) {
+						mApplication.setBalance((float) json
+								.getLong("totalBalance"));
+						Toast.makeText(PlanActivity.this,
+								"Payment Verification Success",
+								Toast.LENGTH_LONG).show();
+						//Book paln in OBS
+						orderPlans(mPlans.get(selGroupId).toString());
+
+
+					} else if (mPaymentStatus.equalsIgnoreCase("Fail")) {
+						Toast.makeText(PlanActivity.this,
+								"Payment Verification Failed",
+								Toast.LENGTH_LONG).show();
+					}
+				}
+
+			} catch (JSONException e) {
+				Toast.makeText(PlanActivity.this,
+						"Server Error", Toast.LENGTH_LONG).show();
+				Log.i("VodMovieDetailsActivity",
+						"JsonEXception at payment verification");
+			} catch (NullPointerException e) {
+				Toast.makeText(PlanActivity.this,
+						"Server Error  ", Toast.LENGTH_LONG).show();
+				Log.i("VodMovieDetailsActivity",
+						"Null PointerEXception at payment verification");
+			}
+		}
+	} else {
+		Toast.makeText(PlanActivity.this, "Server Error",
+				Toast.LENGTH_LONG).show();
+	}
+}
+}	
+
+	
 	private void buildPaytermList(){
 		
 		(findViewById(R.id.a_plan_exlv)).setVisibility(View.GONE);

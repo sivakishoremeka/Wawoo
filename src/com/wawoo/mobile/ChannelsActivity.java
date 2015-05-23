@@ -1,8 +1,9 @@
 package com.wawoo.mobile;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.json.JSONException;
 
 import android.app.ActionBar;
 import android.app.Activity;
@@ -14,10 +15,10 @@ import android.content.ActivityNotFoundException;
 import android.content.CursorLoader;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -36,22 +37,25 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.nostra13.universalimageloader.core.ImageLoader;
-import com.paypal.android.sdk.payments.PayPalPayment;
 import com.paypal.android.sdk.payments.PayPalService;
 import com.paypal.android.sdk.payments.PaymentActivity;
+import com.paypal.android.sdk.payments.PaymentConfirmation;
 import com.wawoo.adapter.ChannelGridViewAdapter;
 import com.wawoo.data.ChannelsDatum;
 import com.wawoo.data.ServiceDatum;
 import com.wawoo.database.DBHelper;
 import com.wawoo.database.ServiceProvider;
 import com.wawoo.mobile.MyApplication.SortBy;
+import com.wawoo.paypal.PaypalHelper;
+import com.wawoo.paypal.PaypalHelper.UpdatePaymentTaskListener;
 import com.wawoo.retrofit.OBSClient;
 
 public class ChannelsActivity extends Activity implements
-		LoaderCallbacks<Cursor> {
+		LoaderCallbacks<Cursor>, UpdatePaymentTaskListener  {
 
 	// private final String TAG = ChannelsActivity.this.getClass().getName();
 	public final static String CHANNEL_DESC = "Channel Desc";
@@ -70,24 +74,22 @@ public class ChannelsActivity extends Activity implements
 	AlertDialog mConfirmDialog;
 	private String mChannelURL;
 	private int mChannelId;
-	public static int INSTALL_MXPLAYER_MARKET = 1;
+	PaypalHelper mPaypalHelper;
 
 	public static int mSortBy = SortBy.CATEGORY.ordinal();
 
 	private ArrayList<String> groupsList = new ArrayList<String>();
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_channels);
 		ActionBar actionBar = getActionBar();
 		actionBar.setDisplayHomeAsUpEnabled(true);
-
+		
 		mApplication = ((MyApplication) getApplicationContext());
 		mOBSClient = mApplication.getOBSClient();
 		mSearchString = null;
-
-		// getServices();
+		mPaypalHelper = new PaypalHelper(this,mApplication); 
 	}
 
 	@Override
@@ -295,11 +297,10 @@ public class ChannelsActivity extends Activity implements
 					mApplication.getEditor().putString(
 							CHANNEL_URL, service.getUrl());
 					mApplication.getEditor().commit();
-					//startActivity(new Intent(ChannelsActivity.this,
-					//		IPTVActivity.class));
 					
 					if (mApplication.balanceCheck == true
 							&& (mApplication.getBalance() > 0)) {
+						
 						final boolean isPayPalChk = mApplication
 								.isPayPalCheck();
 						AlertDialog.Builder builder = new AlertDialog.Builder(
@@ -327,40 +328,8 @@ public class ChannelsActivity extends Activity implements
 									public void onClick(DialogInterface dialog,
 											int which) {
 										if (isPayPalChk == true) {
-											Intent svcIntent = new Intent(
-													ChannelsActivity.this,
-													PayPalService.class);
-
-											svcIntent
-													.putExtra(
-															PayPalService.EXTRA_PAYPAL_CONFIGURATION,
-															mApplication
-																	.getPaypalConfig());
-
-											startService(svcIntent);
-
-											PayPalPayment paymentData = new PayPalPayment(
-													new BigDecimal(mApplication
-															.getBalance()),
-													mApplication.getCurrency(),
-													getResources().getString(
-															R.string.app_name)
-															+ " -Payment",
-													PayPalPayment.PAYMENT_INTENT_SALE);
-
-											Intent actviIntent = new Intent(
-													ChannelsActivity.this,
-													PaymentActivity.class);
-
-											actviIntent
-													.putExtra(
-															PaymentActivity.EXTRA_PAYMENT,
-															paymentData);
-
-											startActivityForResult(
-													actviIntent,
-													MyApplication.REQUEST_CODE_PAYMENT);
-										}
+											mPaypalHelper.startPaypalActivity();
+											}
 									}
 								});
 						mConfirmDialog.show();
@@ -379,6 +348,42 @@ public class ChannelsActivity extends Activity implements
 	}
 	
 	
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if(requestCode == MXPlayerActivity.INSTALL_MXPLAYER_MARKET){
+			initiallizeMXPlayer();
+			return;
+		}
+		/** Stop PayPalIntent Service... */
+		stopService(new Intent(this, PayPalService.class));
+		if (mConfirmDialog != null && mConfirmDialog.isShowing()) {
+			mConfirmDialog.dismiss();
+		}
+		if (resultCode == Activity.RESULT_OK) {
+			PaymentConfirmation confirm = data
+					.getParcelableExtra(PaymentActivity.EXTRA_RESULT_CONFIRMATION);
+			if (confirm != null) {
+				try {
+					Log.i("OBSPayment", confirm.toJSONObject().toString(4));
+					/** Call OBS API for verification and payment record. */
+					mPaypalHelper.updatePaymentInOBS(confirm.toJSONObject().toString(4));
+				} catch (JSONException e) {
+					Log.e("OBSPayment",
+							"an extremely unlikely failure occurred: ", e);
+				}
+			}
+		} else if (resultCode == Activity.RESULT_CANCELED) {
+			Log.i("OBSPayment", "The user canceled.");
+			Toast.makeText(this, "The user canceled.", Toast.LENGTH_LONG)
+					.show();
+		} else if (resultCode == PaymentActivity.RESULT_EXTRAS_INVALID) {
+			Log.i("OBSPayment",
+					"An invalid Payment or PayPalConfiguration was submitted. Please see the docs.");
+			Toast.makeText(this,
+					"An invalid Payment or PayPalConfiguration was submitted",
+					Toast.LENGTH_LONG).show();
+		}
+	}
+
 	protected void startMediaPlayer() {
 
 		Intent intent = new Intent();
@@ -450,7 +455,7 @@ public class ChannelsActivity extends Activity implements
 							public void onClick(DialogInterface dialog, int which) {
 								Intent goToMarket = new Intent(Intent.ACTION_VIEW)
 							    .setData(Uri.parse("market://details?id=com.mxtech.videoplayer.ad&hl=en"));
-								startActivityForResult(goToMarket,INSTALL_MXPLAYER_MARKET);
+								startActivityForResult(goToMarket,MXPlayerActivity.INSTALL_MXPLAYER_MARKET);
 							}
 						});
 				mConfirmDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "No",
@@ -603,9 +608,6 @@ public class ChannelsActivity extends Activity implements
 													CHANNEL_URL,
 													chTag.url);
 									mApplication.getEditor().commit();
-									//startActivity(new Intent(
-									//		ChannelsActivity.this,
-									//		IPTVActivity.class));
 									mChannelId = channel.serviceId;
 									mChannelURL = channel.url;
 									mApplication.getEditor().putString(
@@ -614,9 +616,6 @@ public class ChannelsActivity extends Activity implements
 									mApplication.getEditor().putString(
 											CHANNEL_URL, mChannelURL);
 									mApplication.getEditor().commit();
-									//startActivity(new Intent(ChannelsActivity.this,
-									//		IPTVActivity.class));
-									
 									if (mApplication.balanceCheck == true
 											&& (mApplication.getBalance() > 0)) {
 										final boolean isPayPalChk = mApplication
@@ -646,40 +645,8 @@ public class ChannelsActivity extends Activity implements
 													public void onClick(DialogInterface dialog,
 															int which) {
 														if (isPayPalChk == true) {
-															Intent svcIntent = new Intent(
-																	ChannelsActivity.this,
-																	PayPalService.class);
-
-															svcIntent
-																	.putExtra(
-																			PayPalService.EXTRA_PAYPAL_CONFIGURATION,
-																			mApplication
-																					.getPaypalConfig());
-
-															startService(svcIntent);
-
-															PayPalPayment paymentData = new PayPalPayment(
-																	new BigDecimal(mApplication
-																			.getBalance()),
-																	mApplication.getCurrency(),
-																	getResources().getString(
-																			R.string.app_name)
-																			+ " -Payment",
-																	PayPalPayment.PAYMENT_INTENT_SALE);
-
-															Intent actviIntent = new Intent(
-																	ChannelsActivity.this,
-																	PaymentActivity.class);
-
-															actviIntent
-																	.putExtra(
-																			PaymentActivity.EXTRA_PAYMENT,
-																			paymentData);
-
-															startActivityForResult(
-																	actviIntent,
-																	MyApplication.REQUEST_CODE_PAYMENT);
-														}
+                                                          mPaypalHelper.startPaypalActivity();
+															}
 													}
 												});
 										mConfirmDialog.show();
@@ -792,4 +759,22 @@ public class ChannelsActivity extends Activity implements
 		dialog.show();
 
 	}
+	//UpdatePaymentTaskListener callbacks
+	@Override
+	public void onSuccess() {
+		startMediaPlayer();
+	}
+	
+	@Override
+	public void onFailure() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public String getTag() {
+		
+		return ChannelsActivity.this.getClass().getName();
+	}
+
 }

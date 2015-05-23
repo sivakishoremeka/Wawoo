@@ -72,7 +72,7 @@ public class MyApplication extends Application {
 	public static PayPalConfiguration config = null;
 	
 	/** PayPal configurations */
-	private static final String CONFIG_ENVIRONMENT = PayPalConfiguration.ENVIRONMENT_PRODUCTION;
+	private static final String CONFIG_ENVIRONMENT = PayPalConfiguration.ENVIRONMENT_SANDBOX;//ENVIRONMENT_PRODUCTION;
 	// note that these credentials will differ between live & sandbox
 	// environments.
 	public static final int REQUEST_CODE_PAYMENT = 1;
@@ -421,13 +421,13 @@ public class MyApplication extends Application {
 	public PayPalConfiguration getPaypalConfig() {
 		config = new PayPalConfiguration()
 				.environment(CONFIG_ENVIRONMENT)
-				.clientId(payPalClientID)
+				.clientId("AZqG2RCYDJtB9b1J3Qz-uZIzrg9uFTh_RjV8NaupF3RXoXJVzKhI3kqDvSvm")//payPalClientID)//   
 				// The following are only used in PayPalFuturePaymentActivity.
-				.merchantName("StormTV Box")
+				.merchantName("Wawoo Mobile Application")
 				.merchantPrivacyPolicyUri(
-						Uri.parse("https://www.example.com/privacy"))
+						Uri.parse("https://www.wawoo.com/privacy"))
 				.merchantUserAgreementUri(
-						Uri.parse("https://www.example.com/legal"));
+						Uri.parse("https://www.wawoo.com/legal"));
 
 		return config;
 		

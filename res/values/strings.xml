@@ -23,8 +23,9 @@
     <string name="back"> &lt; Back</string>
     <string name="balance">Balance</string>
     <string name="balance_updated_at">Balance Updated At</string>
-    <string name="basic_auth">Basic YWRtaW46b2JzQDEyMw==</string><!-- Spark  admin/obs@123 -->
-	<string name="basic_auth_">Basic YmlsbGluZzpwYXNzd29yZA==</string><!-- Peter  billing/password -->
+    <string name="basic_auth_">Basic YWRtaW46b2JzQDEyMw==</string><!-- Spark  admin/obs@123 -->
+	<string name="basic_auth">Basic YmlsbGluZzpwYXNzd29yZA==</string><!-- Peter  billing/password -->
+	<string name="basic_auth__">Basic YmlsbGluZzoxMnB3QDNk</string>
     <string name="cancel">Cancel</string>
     <string name="cast_crew">Cast &amp; Crew</string>
     <string name="change_pwd">Change Password</string>
@@ -86,8 +87,9 @@
     <string name="sel_country">Select Country </string>
     <string name="sel_pkg">Select Package</string>
     <string name="serialno">Serial No</string>
-    <string name="server_url">https://41.76.90.173/obsplatform/api/v1</string>
-    <string name="server_url_">https://162.247.76.200:8443/obsplatform/api/v1</string>
+    <string name="server_url___">https://49.205.94.173/obsplatform/api/v1</string>
+    <string name="server_url_">https://41.76.90.173/obsplatform/api/v1</string>
+    <string name="server_url">https://162.247.76.200:8443/obsplatform/api/v1</string>
     <string name="status_err_msg">Dear User.... Logged in user is already watching Live Content on other Active devices...... "Please Note: Parallel viewing is supported on 1 Device only"..... Contact your Service Operator for details.</string>
     <string name="subscribe">Subscribe</string>
     <string name="tenent_id">default</string>

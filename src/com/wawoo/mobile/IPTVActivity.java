@@ -1,6 +1,5 @@
 package com.wawoo.mobile;
 
-import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
@@ -40,8 +39,8 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.interswitchng.techquest.vervepayment.VervePayment;
 import com.nostra13.universalimageloader.core.ImageLoader;
-import com.paypal.android.sdk.payments.PayPalPayment;
 import com.paypal.android.sdk.payments.PayPalService;
 import com.paypal.android.sdk.payments.PaymentActivity;
 import com.paypal.android.sdk.payments.PaymentConfirmation;
@@ -81,7 +80,6 @@ public class IPTVActivity extends FragmentActivity {
 
 	AlertDialog mConfirmDialog;
 	
-	public static int INSTALL_MXPLAYER_MARKET = 1;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -138,7 +136,7 @@ public class IPTVActivity extends FragmentActivity {
 									public void onClick(DialogInterface dialog,
 											int which) {
 										if (isPayPalChk == true) {
-											Intent svcIntent = new Intent(
+											/*Intent svcIntent = new Intent(
 													IPTVActivity.this,
 													PayPalService.class);
 
@@ -171,7 +169,17 @@ public class IPTVActivity extends FragmentActivity {
 											startActivityForResult(
 													actviIntent,
 													MyApplication.REQUEST_CODE_PAYMENT);
-										}
+*/
+											Intent intent = new Intent(IPTVActivity.this,VervePayment.class);
+											 intent.putExtra("clientId", "IKIA9C84273350A822FDCDDA246BC57EB220D24E3EFC");
+												intent.putExtra("clientSecret", "ti+1XNcv2+X4Vd/GOtyukqiXv5KKbUEPAeLE+vRiXcQ=");
+												intent.putExtra("customerId",mApplication.getClientId() );
+												intent.putExtra("paymentCode","no code");
+												intent.putExtra("amount", "100"); 
+										                intent.putExtra("isTestPayment", true);
+											
+										                startActivityForResult(intent, 909090);
+											}
 									}
 								});
 						mConfirmDialog.show();
@@ -288,7 +296,7 @@ public class IPTVActivity extends FragmentActivity {
 							public void onClick(DialogInterface dialog, int which) {
 								Intent goToMarket = new Intent(Intent.ACTION_VIEW)
 							    .setData(Uri.parse("market://details?id=com.mxtech.videoplayer.ad&hl=en"));
-								startActivityForResult(goToMarket,INSTALL_MXPLAYER_MARKET);
+								startActivityForResult(goToMarket,MXPlayerActivity.INSTALL_MXPLAYER_MARKET);
 							}
 						});
 				mConfirmDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "No",
@@ -424,24 +432,37 @@ public class IPTVActivity extends FragmentActivity {
 		mViewPager.setAdapter(mEpgPagerAdapter);
 	}
 
+	
+	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		/** After Installation, start MXPLayer... */
+		if (resultCode == RESULT_OK && requestCode == 400) {
+			// get data from intent
+			int txnStatus = data.getIntExtra("qtTransactionStatus", 0);
+                        //txnStatus is either 0 if transaction failed or 1 if transaction was successful
+			
+			Toast.makeText(IPTVActivity.this, "Payment " + txnStatus, Toast.LENGTH_LONG).show();
+ 
+		}
+	}
+	
+/*	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		*//** After Installation, start MXPLayer... *//*
 		if(requestCode == INSTALL_MXPLAYER_MARKET){
 			initiallizeMXPlayer();
 			return;
 		}
-		/** Stop PayPalIntent Service... */
+		*//** Stop PayPalIntent Service... *//*
 		stopService(new Intent(this, PayPalService.class));
 		if (mConfirmDialog != null && mConfirmDialog.isShowing()) {
 			mConfirmDialog.dismiss();
-		}
+		}		
 		if (resultCode == Activity.RESULT_OK) {
 			PaymentConfirmation confirm = data
 					.getParcelableExtra(PaymentActivity.EXTRA_RESULT_CONFIRMATION);
 			if (confirm != null) {
 				try {
 					Log.i("OBSPayment", confirm.toJSONObject().toString(4));
-					/** Call OBS API for verification and payment record. */
+					*//** Call OBS API for verification and payment record. *//*
 					OBSPaymentAsyncTask task = new OBSPaymentAsyncTask();
 					task.execute(confirm.toJSONObject().toString(4));
 				} catch (JSONException e) {
@@ -461,7 +482,7 @@ public class IPTVActivity extends FragmentActivity {
 					Toast.LENGTH_LONG).show();
 		}
 	}
-
+*/
 	private class OBSPaymentAsyncTask extends
 			AsyncTask<String, Void, ResponseObj> {
 		JSONObject reqJson = null;

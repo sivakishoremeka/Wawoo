@@ -1,6 +1,5 @@
 package com.wawoo.mobile;
 
-import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -19,7 +18,6 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
-import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -39,7 +37,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.nostra13.universalimageloader.core.ImageLoader;
-import com.paypal.android.sdk.payments.PayPalPayment;
 import com.paypal.android.sdk.payments.PayPalService;
 import com.paypal.android.sdk.payments.PaymentActivity;
 import com.paypal.android.sdk.payments.PaymentConfirmation;
@@ -47,11 +44,14 @@ import com.wawoo.data.MediaDetailsResDatum;
 import com.wawoo.data.PriceDetail;
 import com.wawoo.data.ResponseObj;
 import com.wawoo.mobile.MyApplication.DoBGTasks;
+import com.wawoo.paypal.PaypalHelper;
+import com.wawoo.paypal.PaypalHelper.UpdatePaymentTaskListener;
 import com.wawoo.retrofit.OBSClient;
 import com.wawoo.service.DoBGTasksService;
 import com.wawoo.utils.Utilities;
 
-public class VodMovieDetailsActivity extends Activity {
+public class VodMovieDetailsActivity extends Activity implements
+		UpdatePaymentTaskListener {
 
 	// public static String TAG = VodMovieDetailsActivity.class.getName();
 	private final static String NETWORK_ERROR = "NETWORK_ERROR";
@@ -68,9 +68,8 @@ public class VodMovieDetailsActivity extends Activity {
 	private String mChannelURL;
 	AlertDialog mConfirmDialog;
 	double mVodPrice;
+	PaypalHelper mPaypalHelper;
 
-	public static int INSTALL_MXPLAYER_MARKET = 1;
-	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -83,7 +82,7 @@ public class VodMovieDetailsActivity extends Activity {
 
 		mApplication = ((MyApplication) getApplicationContext());
 		mOBSClient = mApplication.getOBSClient();
-
+		mPaypalHelper = new PaypalHelper(this, mApplication);
 		mDeviceId = Settings.Secure.getString(
 				mApplication.getContentResolver(), Settings.Secure.ANDROID_ID);
 
@@ -165,32 +164,7 @@ public class VodMovieDetailsActivity extends Activity {
 						@Override
 						public void onClick(DialogInterface dialog, int which) {
 							if (isPayPalReq == true) {
-								Intent svcIntent = new Intent(
-										VodMovieDetailsActivity.this,
-										PayPalService.class);
-								svcIntent
-										.putExtra(
-												PayPalService.EXTRA_PAYPAL_CONFIGURATION,
-												mApplication.getPaypalConfig());
-								startService(svcIntent);
-								PayPalPayment paymentData = new PayPalPayment(
-										new BigDecimal(balance + mVodPrice),
-										mApplication.getCurrency(),
-										getResources().getString(
-												R.string.app_name)
-												+ " VOD-Payment",
-										PayPalPayment.PAYMENT_INTENT_SALE);
-
-								Intent actviIntent = new Intent(
-										VodMovieDetailsActivity.this,
-										PaymentActivity.class);
-
-								actviIntent.putExtra(
-										PaymentActivity.EXTRA_PAYMENT,
-										paymentData);
-
-								startActivityForResult(actviIntent,
-										MyApplication.REQUEST_CODE_PAYMENT);
+								mPaypalHelper.startPaypalActivity();
 							}
 						}
 					});
@@ -278,25 +252,27 @@ public class VodMovieDetailsActivity extends Activity {
 			}
 		}
 	};
+
 	private void initiallizeMXPlayer() {
-		//String TAG = "mxvp.intent.test";
+		// String TAG = "mxvp.intent.test";
 		String MXVP = "com.mxtech.videoplayer.ad";
 		String MXVP_PRO = "com.mxtech.videoplayer.pro";
 
 		String MXVP_PLAYBACK_CLASS = "com.mxtech.videoplayer.ad.ActivityScreen";
-		//String MXVP_PRO_PLAYBACK_CLASS = "com.mxtech.videoplayer.ActivityScreen";
+		// String MXVP_PRO_PLAYBACK_CLASS =
+		// "com.mxtech.videoplayer.ActivityScreen";
 
-		//String RESULT_VIEW = "com.mxtech.intent.result.VIEW";
+		// String RESULT_VIEW = "com.mxtech.intent.result.VIEW";
 		String EXTRA_DECODE_MODE = "decode_mode"; // (byte)
 		String EXTRA_SECURE_URI = "secure_uri";
-		//String EXTRA_VIDEO_LIST = "video_list";
-		//String EXTRA_SUBTITLES = "subs";
-		//String EXTRA_SUBTITLES_ENABLE = "subs.enable";
-		//String EXTRA_TITLE = "title";
-		//String EXTRA_POSITION = "position";
+		// String EXTRA_VIDEO_LIST = "video_list";
+		// String EXTRA_SUBTITLES = "subs";
+		// String EXTRA_SUBTITLES_ENABLE = "subs.enable";
+		// String EXTRA_TITLE = "title";
+		// String EXTRA_POSITION = "position";
 		String EXTRA_RETURN_RESULT = "return_result";
 		String EXTRA_HEADERS = "headers";
-		
+
 		Uri mUri = Uri.parse(mChannelURL);
 		Intent i = new Intent(Intent.ACTION_VIEW);
 		i.setDataAndType(mUri, "application/*");
@@ -314,37 +290,40 @@ public class VodMovieDetailsActivity extends Activity {
 			ResolveInfo info = pm.resolveActivity(i,
 					PackageManager.MATCH_DEFAULT_ONLY);
 			if (info == null) {
-			i.setPackage(MXVP);
-			i.setClassName(MXVP, MXVP_PLAYBACK_CLASS);
-			info = pm.resolveActivity(i,
-					PackageManager.MATCH_DEFAULT_ONLY);
-			if (info == null) {
-				AlertDialog mConfirmDialog = ((MyApplication) getApplicationContext())
-						.getConfirmDialog(VodMovieDetailsActivity.this);
-				mConfirmDialog.setMessage("MXPlayer is not found in Device. Are you sure to download from Play Store.??");
-				mConfirmDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Yes",
-						new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(DialogInterface dialog, int which) {
-								Intent goToMarket = new Intent(Intent.ACTION_VIEW)
-							    .setData(Uri.parse("market://details?id=com.mxtech.videoplayer.ad&hl=en"));
-								startActivityForResult(goToMarket,INSTALL_MXPLAYER_MARKET);
-							}
-						});
-				mConfirmDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "No",
-						new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(DialogInterface dialog, int which) {
-							}
-						});
-				mConfirmDialog.show();
-			} else{
-			startActivity(i);
-			return;
-			}
-			}
-			else
-			{
+				i.setPackage(MXVP);
+				i.setClassName(MXVP, MXVP_PLAYBACK_CLASS);
+				info = pm.resolveActivity(i, PackageManager.MATCH_DEFAULT_ONLY);
+				if (info == null) {
+					AlertDialog mConfirmDialog = ((MyApplication) getApplicationContext())
+							.getConfirmDialog(VodMovieDetailsActivity.this);
+					mConfirmDialog
+							.setMessage("MXPlayer is not found in Device. Are you sure to download from Play Store.??");
+					mConfirmDialog.setButton(AlertDialog.BUTTON_POSITIVE,
+							"Yes", new DialogInterface.OnClickListener() {
+								@Override
+								public void onClick(DialogInterface dialog,
+										int which) {
+									Intent goToMarket = new Intent(
+											Intent.ACTION_VIEW).setData(Uri
+											.parse("market://details?id=com.mxtech.videoplayer.ad&hl=en"));
+									startActivityForResult(
+											goToMarket,
+											MXPlayerActivity.INSTALL_MXPLAYER_MARKET);
+								}
+							});
+					mConfirmDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "No",
+							new DialogInterface.OnClickListener() {
+								@Override
+								public void onClick(DialogInterface dialog,
+										int which) {
+								}
+							});
+					mConfirmDialog.show();
+				} else {
+					startActivity(i);
+					return;
+				}
+			} else {
 				startActivity(i);
 				return;
 			}
@@ -409,8 +388,8 @@ public class VodMovieDetailsActivity extends Activity {
 
 				Intent intent = new Intent();
 				try {
-					mChannelURL = ((String) (new JSONObject(resObj.getsResponse()))
-							.get("resourceIdentifier"));
+					mChannelURL = ((String) (new JSONObject(
+							resObj.getsResponse())).get("resourceIdentifier"));
 					intent.putExtra("URL",
 							((String) (new JSONObject(resObj.getsResponse()))
 									.get("resourceIdentifier")));
@@ -506,7 +485,7 @@ public class VodMovieDetailsActivity extends Activity {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if(requestCode == INSTALL_MXPLAYER_MARKET){
+		if (requestCode == MXPlayerActivity.INSTALL_MXPLAYER_MARKET) {
 			initiallizeMXPlayer();
 			return;
 		}
@@ -522,8 +501,8 @@ public class VodMovieDetailsActivity extends Activity {
 				try {
 					Log.i("OBSPayment", confirm.toJSONObject().toString(4));
 					/** Call OBS API for verification and payment record. */
-					OBSPaymentAsyncTask task = new OBSPaymentAsyncTask();
-					task.execute(confirm.toJSONObject().toString(4));
+					mPaypalHelper.updatePaymentInOBS(confirm.toJSONObject()
+							.toString(4));
 				} catch (JSONException e) {
 					Log.e("OBSPayment",
 							"an extremely unlikely failure occurred: ", e);
@@ -542,115 +521,6 @@ public class VodMovieDetailsActivity extends Activity {
 		}
 	}
 
-	private class OBSPaymentAsyncTask extends
-			AsyncTask<String, Void, ResponseObj> {
-		JSONObject reqJson = null;
-
-		@Override
-		protected void onPreExecute() {
-			super.onPreExecute();
-			if (mProgressDialog != null) {
-				mProgressDialog.dismiss();
-				mProgressDialog = null;
-			}
-			mProgressDialog = new ProgressDialog(VodMovieDetailsActivity.this,
-					ProgressDialog.THEME_HOLO_DARK);
-			mProgressDialog.setMessage("Connecting Server...");
-			mProgressDialog.setCanceledOnTouchOutside(false);
-			mProgressDialog.setOnCancelListener(new OnCancelListener() {
-
-				public void onCancel(DialogInterface arg0) {
-					if (mProgressDialog.isShowing())
-						mProgressDialog.dismiss();
-
-					Toast.makeText(VodMovieDetailsActivity.this,
-							"Payment verification Failed.", Toast.LENGTH_LONG)
-							.show();
-					cancel(true);
-				}
-			});
-			mProgressDialog.show();
-		}
-
-		@Override
-		protected ResponseObj doInBackground(String... arg) {
-			ResponseObj resObj = new ResponseObj();
-			try {
-				reqJson = new JSONObject(arg[0]);
-
-				if (mApplication.isNetworkAvailable()) {
-					resObj = Utilities.callExternalApiPostMethod(
-							getApplicationContext(),
-							"/payments/paypalEnquirey/"
-									+ mApplication.getClientId(), reqJson);
-				} else {
-					resObj.setFailResponse(100, "Network error.");
-				}
-			} catch (JSONException e) {
-				Log.e("VodMovieDetailsActivity-ObsPaymentCheck",
-						(e.getMessage() == null) ? "Json Exception" : e
-								.getMessage());
-				e.printStackTrace();
-				Toast.makeText(VodMovieDetailsActivity.this,
-						"Invalid data: On PayPal Payment ", Toast.LENGTH_LONG)
-						.show();
-			}
-			if (mConfirmDialog != null && mConfirmDialog.isShowing()) {
-				mConfirmDialog.dismiss();
-			}
-			return resObj;
-		}
-
-		@Override
-		protected void onPostExecute(ResponseObj resObj) {
-
-			super.onPostExecute(resObj);
-			if (mProgressDialog.isShowing()) {
-				mProgressDialog.dismiss();
-			}
-
-			if (resObj.getStatusCode() == 200) {
-				if (resObj.getsResponse().length() > 0) {
-					JSONObject json;
-					try {
-						json = new JSONObject(resObj.getsResponse());
-						json = json.getJSONObject("changes");
-						if (json != null) {
-							String mPaymentStatus = json
-									.getString("paymentStatus");
-							if (mPaymentStatus.equalsIgnoreCase("Success")) {
-								mApplication.setBalance((float) json
-										.getLong("totalBalance"));
-								Toast.makeText(VodMovieDetailsActivity.this,
-										"Payment Verification Success",
-										Toast.LENGTH_LONG).show();
-								BookOrder();
-
-							} else if (mPaymentStatus.equalsIgnoreCase("Fail")) {
-								Toast.makeText(VodMovieDetailsActivity.this,
-										"Payment Verification Failed",
-										Toast.LENGTH_LONG).show();
-							}
-						}
-
-					} catch (JSONException e) {
-						Toast.makeText(VodMovieDetailsActivity.this,
-								"Server Error", Toast.LENGTH_LONG).show();
-						Log.i("VodMovieDetailsActivity",
-								"JsonEXception at payment verification");
-					} catch (NullPointerException e) {
-						Toast.makeText(VodMovieDetailsActivity.this,
-								"Server Error  ", Toast.LENGTH_LONG).show();
-						Log.i("VodMovieDetailsActivity",
-								"Null PointerEXception at payment verification");
-					}
-				}
-			} else {
-				Toast.makeText(VodMovieDetailsActivity.this, "Server Error",
-						Toast.LENGTH_LONG).show();
-			}
-		}
-	}
 	public void logout() {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this,
 				AlertDialog.THEME_HOLO_LIGHT);
@@ -668,11 +538,14 @@ public class VodMovieDetailsActivity extends Activity {
 				new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
-						
+
 						// Clear shared preferences..
-						((MyApplication) getApplicationContext()).getEditor().clear().commit();;
+						((MyApplication) getApplicationContext()).getEditor()
+								.clear().commit();
+						;
 						// close all activities..
-						Intent Closeintent = new Intent(VodMovieDetailsActivity.this,
+						Intent Closeintent = new Intent(
+								VodMovieDetailsActivity.this,
 								MainActivity.class);
 						// set the new task and clear flags
 						Closeintent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -685,5 +558,22 @@ public class VodMovieDetailsActivity extends Activity {
 		dialog.show();
 
 	}
-	
+
+	// UpdatePaymentTaskListener callbacks
+	@Override
+	public void onSuccess() {
+		BookOrder();
+	}
+
+	@Override
+	public void onFailure() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public String getTag() {
+
+		return VodMovieDetailsActivity.this.getClass().getName();
+	}
 }
